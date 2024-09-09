@@ -12,6 +12,7 @@ export const userSchema = z.object({
   description: z.string().nullish(),
   password: z.string(),
   picture: z.string().nullish(),
+  astronomers: z.any(),
   access_level: z.enum(["USER", "ADMIN"]),
   createdAt: z.date(),
   deletedAt: z.date().nullish(),

@@ -9,7 +9,6 @@ export const ensureUserIdExists = async (
   next: NextFunction
 ): Promise<void> => {
   const id: string = req.params.id;
-  console.log(id);
   const user: User | null = await db.user.findUnique({
     where: {
       id: id,

@@ -11,6 +11,7 @@ import { postRoute } from "./routes/post.route";
 import { adminRoute } from "./routes/admin.route";
 import { commentRoute } from "./routes/comment.route";
 import { historyRoute } from "./routes/history.route";
+import { astronomerRoute } from "./routes/astronomer.route";
 
 export const db = new PrismaClient();
 
@@ -25,6 +26,7 @@ app.use("/posts", postRoute);
 app.use("/admin", adminRoute);
 app.use("/comment", commentRoute);
 app.use("/history", historyRoute);
+app.use("/astronomer", astronomerRoute);
 
 app.use(handleError);
 

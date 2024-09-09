@@ -12,7 +12,7 @@ import { Router } from "express";
 
 export const historyRoute: Router = Router();
 
-historyRoute.get("/", ensureUserToken, ensureIsAdm, getAllHistoryController);
+historyRoute.get("/", ensureUserToken, getAllHistoryController);
 
 historyRoute.post(
   "/",

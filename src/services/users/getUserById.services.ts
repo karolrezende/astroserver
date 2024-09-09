@@ -9,6 +9,9 @@ import { User } from "@prisma/client";
 //     const user: User | null = await db.user.findUnique({
 //         where:{
 //             id:id
+//         },
+//         include: {
+//           astronomers:true
 //         }
 //     })
 
@@ -21,7 +24,14 @@ import { User } from "@prisma/client";
 
 const getUserByIdService = async (id: string): Promise<userWithoutPassword> => {
   const users = await db.$queryRaw<User[]>`
-    SELECT * FROM "User" WHERE "id" = ${id} LIMIT 1;
+      SELECT "u".*, 
+           json_agg("a".*) AS "astronomers"
+    FROM "User" AS "u"
+    LEFT JOIN "User_astronomers" AS "ua" ON "u"."id" = "ua"."userId"
+    LEFT JOIN "Astronomer" AS "a" ON "ua"."astronomerId" = "a"."id"
+    WHERE "u"."id" = ${id}
+    GROUP BY "u"."id"
+    LIMIT 1;
   `;
 
   if (users.length === 0) {

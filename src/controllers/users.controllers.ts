@@ -77,7 +77,7 @@ const getUserByTokenController = async (
 ): Promise<Response<void>> => {
   try {
     const email: string = res.locals.email;
-    const user: userWithoutPassword = await getUserByTokenService(email);
+    const user= await getUserByTokenService(email);
     return res.status(200).json(user);
   } catch (error) {
     console.error(error);
