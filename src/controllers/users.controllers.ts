@@ -5,9 +5,12 @@ import { getAllUsersService } from "@/services/users/getAllUsers.services";
 import { getUserByIdService } from "@/services/users/getUserById.services";
 import {
   userPassword,
+  userPublic,
   userRegisterResponse,
   userWithoutPassword,
 } from "@/types/user.types";
+import { userPublicSchema } from "@/schemas/user.schemas";
+import { Access_level } from "@prisma/client";
 import { putUserService } from "@/services/users/putUser.services";
 import { deleteUserService } from "@/services/users/deleteUser.services";
 import { getUserByTokenService } from "@/services/users/getUserByToken.services";
@@ -49,7 +52,7 @@ const getAllUsersController = async (
   res: Response
 ): Promise<Response<void>> => {
   try {
-    const users: userWithoutPassword[] = await getAllUsersService();
+    const users: userPublic[] = await getAllUsersService();
     return res.status(200).json(users);
   } catch (error) {
     console.error(error);
@@ -64,7 +67,15 @@ const getUserByIdController = async (
   try {
     const id: string = req.params.id;
     const user: userWithoutPassword = await getUserByIdService(id);
-    return res.status(200).json(user);
+
+    // O e-mail só aparece para o próprio usuário ou para um admin
+    const canSeeEmail =
+      user.email === res.locals.email ||
+      res.locals.isAdmin === Access_level.ADMIN;
+
+    return res
+      .status(200)
+      .json(canSeeEmail ? user : userPublicSchema.parse(user));
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Erro interno" });
@@ -120,10 +131,13 @@ const passwordUserController = async (
 ): Promise<Response<void>> => {
   try {
     const data: userPassword = req.body;
-    await passwordUserService(data);
+    await passwordUserService(res.locals.email, data);
     return res.status(200).json({ message: "Senha alterada com sucesso" });
   } catch (error) {
     console.error(error);
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
     return res.status(500).json({ message: "Erro interno" });
   }
 };
