@@ -29,17 +29,33 @@ import bcrypt from "bcrypt";
 //   });
 // };
 
+// A senha alterada é sempre a do dono do token (tokenEmail) e só muda
+// se a senha atual estiver correta.
 export const passwordUserService = async (
+  tokenEmail: string,
   data: userPassword
 ): Promise<void> => {
+  if (data.email && data.email !== tokenEmail) {
+    throw new AppError("Not allowed", 403);
+  }
+
   const users = await db.$queryRaw<User[]>`
-    SELECT * FROM "User" WHERE "email" = ${data.email} LIMIT 1;
+    SELECT * FROM "User" WHERE "email" = ${tokenEmail} LIMIT 1;
   `;
 
   const user = users.length > 0 ? users[0] : null;
 
   if (!user) {
     throw new AppError("Usuário não encontrado", 404);
+  }
+
+  const isCurrentPasswordValid = await bcrypt.compare(
+    data.currentPassword,
+    user.password
+  );
+
+  if (!isCurrentPasswordValid) {
+    throw new AppError("Senha atual incorreta", 401);
   }
 
   const hashedPassword = await bcrypt.hash(data.password, 8);

@@ -25,8 +25,13 @@ import {
 
 export const userRoute: Router = Router();
 
-userRoute.get("", getAllUsersController);
-userRoute.get("/user/:id", ensureUserIdExists, getUserByIdController);
+userRoute.get("", ensureUserToken, getAllUsersController);
+userRoute.get(
+  "/user/:id",
+  ensureUserToken,
+  ensureUserIdExists,
+  getUserByIdController
+);
 userRoute.get("/token", ensureUserToken, getUserByTokenController);
 
 userRoute.post("", ensureSchema(userRegisterSchema), postUserController);
@@ -57,6 +62,8 @@ userRoute.delete(
 
 userRoute.post(
   "/password",
+  ensureUserToken,
+  ensureBodyExists,
   ensureSchema(userPasswordSchema),
   passwordUserController
 );

@@ -1,7 +1,7 @@
 import { db } from "@/app";
 import { AppError } from "@/error";
-import { userWithoutPasswordSchema } from "@/schemas/user.schemas";
-import { userWithoutPassword } from "@/types/user.types";
+import { userPublicSchema } from "@/schemas/user.schemas";
+import { userPublic } from "@/types/user.types";
 import { User } from "@prisma/client";
 
 // const getAllUsersService = async():Promise<userWithoutPassword[]> => {
@@ -19,7 +19,7 @@ import { User } from "@prisma/client";
 
 // export {getAllUsersService}
 
-const getAllUsersService = async (): Promise<userWithoutPassword[]> => {
+const getAllUsersService = async (): Promise<userPublic[]> => {
   const users = await db.$queryRaw<User[]>`
       SELECT * FROM "User";
     `;
@@ -28,11 +28,12 @@ const getAllUsersService = async (): Promise<userWithoutPassword[]> => {
     throw new AppError("Users not found", 400);
   }
 
-  const usersWithoutPassword = users.map((user) =>
-    userWithoutPasswordSchema.parse(user)
+  // Listagem vista por qualquer usuário logado: sem senha e sem e-mail
+  const publicUsers = users.map((user) =>
+    userPublicSchema.parse(user)
   );
 
-  return usersWithoutPassword;
+  return publicUsers;
 };
 
 export { getAllUsersService };

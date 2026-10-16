@@ -26,6 +26,9 @@ export const userRegisterSchema = userSchema.omit({
 });
 export const userWithoutPasswordSchema = userSchema.omit({ password: true });
 
+// Dados de um usuário visíveis para outras pessoas: sem senha e sem e-mail
+export const userPublicSchema = userWithoutPasswordSchema.omit({ email: true });
+
 export const userRegisterResponseSchema = userSchema.omit({
   id: true,
   password: true,
@@ -39,11 +42,18 @@ export const userLoginSchema = z.object({
   password: z.string(),
 });
 
-export const userPasswordSchema = z.object({
-  email: z.string().email("Digite um email válido"),
-  password: z.string(),
-  confirmPassword: z.string(),
-});
+export const userPasswordSchema = z
+  .object({
+    // Opcional: a conta alterada é sempre a do token. Se vier, precisa ser a mesma.
+    email: z.string().email("Digite um email válido").optional(),
+    currentPassword: z.string().min(1, "Informe a senha atual"),
+    password: z.string().min(1, "Informe a nova senha"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "As senhas não coincidem",
+    path: ["confirmPassword"],
+  });
 
 export const userRoleSchema = z.object({
   access_level: z.enum(["USER", "ADMIN"]),

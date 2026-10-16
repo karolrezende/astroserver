@@ -16,7 +16,7 @@ export const ensureUserToken = (
   const oToken = token.split(" ")[1];
 
   jwt.verify(oToken, process.env.SECRET_KEY!, (err: any, decoded: any) => {
-    if (err) throw new AppError(err.message);
+    if (err) throw new AppError(err.message, 401);
 
     res.locals.isAdmin = decoded.isAdmin;
     res.locals.email = decoded.sub;

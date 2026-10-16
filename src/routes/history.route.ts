@@ -26,7 +26,13 @@ historyRoute.put(
   "/:id",
   ensureUserToken,
   ensureBodyExists,
+  ensureIsAdm,
   putHistoryController
 );
 
-historyRoute.delete("/:id", ensureUserToken, deleteHistoryController);
+historyRoute.delete(
+  "/:id",
+  ensureUserToken,
+  ensureIsAdm,
+  deleteHistoryController
+);
