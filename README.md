@@ -40,13 +40,20 @@ Todos os usuários do seed usam a senha `123456`.
 | pedro@astromaniaka.com   | USER   |
 | julia@astromaniaka.com   | USER   |
 
-Também são criados 8 astrônomos, 11 posts (3 aguardando aprovação),
-5 fatos históricos e 10 comentários.
+Também são criados 8 astrônomos, 12 posts (3 aguardando aprovação e 1 recusado
+com motivo), 5 fatos históricos, 10 comentários e 11 curtidas.
 
 Para recriar o banco do zero com o seed:
 
 ```bash
 docker compose down -v && docker compose up -d
+```
+
+Já tinha o banco criado antes das curtidas e da recusa com motivo? Aplique a
+migração sem perder dados:
+
+```bash
+npx prisma db execute --file docker/postgres/migrations/001-funcionalidades-v2.sql --schema prisma/schema.prisma
 ```
 
 Se mudar o `prisma/schema.prisma`, gere o schema SQL novamente:
