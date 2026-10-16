@@ -44,3 +44,7 @@ export const userPasswordSchema = z.object({
   password: z.string(),
   confirmPassword: z.string(),
 });
+
+export const userRoleSchema = z.object({
+  access_level: z.enum(["USER", "ADMIN"]),
+});

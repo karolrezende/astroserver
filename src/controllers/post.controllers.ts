@@ -1,5 +1,9 @@
 import { deletePostService } from "@/services/posts/deletePostService.services";
 import { getAllPostService } from "@/services/posts/getAllPost.services";
+import { getMyPostsService } from "@/services/posts/getMyPosts.services";
+import { toggleLikeService } from "@/services/posts/toggleLike.services";
+import { feedQuerySchema } from "@/schemas/post.schema";
+import { getCurrentUser } from "@/utils/currentUser";
 import { getPostByIdService } from "@/services/posts/getPostById.services";
 import { postPostService } from "@/services/posts/postPost.services";
 import { putAcceptPostService } from "@/services/posts/putAcceptPost.services";
@@ -25,13 +29,28 @@ const getAllPostController = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  try {
-    const posts: postType[] | null = await getAllPostService();
-    return res.status(200).json(posts);
-  } catch (err: any) {
-    console.error(err);
-    return res.status(500).json({ message: "Erro interno" });
-  }
+  const filters = feedQuerySchema.parse(req.query);
+  const viewer = await getCurrentUser(res.locals.email);
+  const feed = await getAllPostService(filters, viewer.id);
+  return res.status(200).json(feed);
+};
+
+const getMyPostsController = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const viewer = await getCurrentUser(res.locals.email);
+  const posts = await getMyPostsService(viewer.id);
+  return res.status(200).json(posts);
+};
+
+const toggleLikeController = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const viewer = await getCurrentUser(res.locals.email);
+  const result = await toggleLikeService(req.params.id, viewer.id);
+  return res.status(200).json(result);
 };
 
 const postPostController = async (
@@ -94,4 +113,6 @@ export {
   deletePostController,
   putPostController,
   putAcceptPostController,
+  getMyPostsController,
+  toggleLikeController,
 };

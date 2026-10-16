@@ -26,7 +26,8 @@ export const getAllPostsToAproveService = async (): Promise<
       ) as user
     FROM "Post" p
     JOIN "User" u ON p."userId" = u."id"
-    WHERE p."is_accepted" = false;
+    WHERE p."is_accepted" = false AND p."rejectedAt" IS NULL
+    ORDER BY p."createdAt" ASC;
   `;
 
   return posts.length > 0 ? posts : [];

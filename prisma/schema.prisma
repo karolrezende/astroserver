@@ -35,22 +35,27 @@ model User {
   posts        Post[]
   astronomers  User_astronomers[]
   comments     Comment[]
+  likes        Like[]
   createdAt    DateTime           @default(now())
   deletedAt    DateTime?
   PostHistory  PostHistory[]
 }
 
 model Post {
-  id          String         @id @default(uuid())
-  title       String
-  description String
-  is_accepted Boolean        @default(false)
-  picture     String?        @db.Text
-  post_type   Type_post_enum @default(POST)
-  user        User           @relation(fields: [userId], references: [id])
-  userId      String
-  comments    Comment[]
-  createdAt   DateTime       @default(now())
+  id               String         @id @default(uuid())
+  title            String
+  description      String
+  is_accepted      Boolean        @default(false)
+  picture          String?        @db.Text
+  post_type        Type_post_enum @default(POST)
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  comments         Comment[]
+  likes            Like[]
+  // Recusa pelo admin: o post continua existindo para o autor ver o motivo
+  rejection_reason String?        @db.Text
+  rejectedAt       DateTime?
+  createdAt        DateTime       @default(now())
 }
 
 model PostHistory {
@@ -76,8 +81,8 @@ model Astronomer {
 model User_astronomers {
   userId       String
   astronomerId String
-  user         User       @relation(fields: [userId], references: [id])
-  astronomer   Astronomer @relation(fields: [astronomerId], references: [id])
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  astronomer   Astronomer @relation(fields: [astronomerId], references: [id], onDelete: Cascade)
 
   @@id([userId, astronomerId])
 }
@@ -88,8 +93,19 @@ model Comment {
   userId        String
   postId        String
   postHistoryId String?
-  user          User         @relation(fields: [userId], references: [id])
-  post          Post         @relation(fields: [postId], references: [id])
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post          Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
   PostHistory   PostHistory? @relation(fields: [postHistoryId], references: [id])
   createdAt     DateTime     @default(now())
+  updatedAt     DateTime?
+}
+
+model Like {
+  userId    String
+  postId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, postId])
 }

@@ -1,45 +1,56 @@
 import { db } from "@/app";
-import { Post } from "@prisma/client";
+import { Prisma, Type_post_enum } from "@prisma/client";
 
-// export const getAllPostService = async (): Promise<Post[]> => {
-//   const posts: Post[] = await db.post.findMany({
-//     where: {
-//       is_accepted: true,
-//     },
-//     select: {
-//       id: true,
-//       title: true,
-//       description: true,
-//       is_accepted: true,
-//       picture: true,
-//       post_type: true,
-//       userId: true,
-//       createdAt: true,
-//       user: {
-//         select: {
-//           id: true,
-//           name: true,
-//         },
-//       },
-//       comments: {
-//         select: {
-//           id: true,
-//           description: true,
-//           user: true,
-//           createdAt: true,
-//         },
-//       },
-//     },
-//     orderBy: {
-//       createdAt: "desc",
-//     },
-//   });
-//   return posts;
-// };
+export type FeedFilters = {
+  page: number;
+  limit: number;
+  search?: string;
+  type?: Type_post_enum;
+};
 
-export const getAllPostService = async (): Promise<Post[]> => {
-  const posts: Post[] = await db.$queryRaw<Post[]>`
-    SELECT 
+export type FeedPage<T> = {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+};
+
+export const getAllPostService = async (
+  filters: FeedFilters,
+  viewerId: string
+): Promise<FeedPage<unknown>> => {
+  const { page, limit, search, type } = filters;
+  const offset = (page - 1) * limit;
+
+  // Busca no título, na descrição e no nome do autor
+  const searchFilter = search
+    ? Prisma.sql`AND (
+        p.title ILIKE ${`%${search}%`}
+        OR p.description ILIKE ${`%${search}%`}
+        OR u.name ILIKE ${`%${search}%`}
+      )`
+    : Prisma.empty;
+
+  const typeFilter = type
+    ? Prisma.sql`AND p.post_type = ${type}::"Type_post_enum"`
+    : Prisma.empty;
+
+  const where = Prisma.sql`
+    WHERE p.is_accepted = true
+    ${searchFilter}
+    ${typeFilter}
+  `;
+
+  const [{ total }] = await db.$queryRaw<{ total: number }[]>`
+    SELECT count(*)::int AS total
+    FROM "Post" p
+    JOIN "User" u ON u.id = p."userId"
+    ${where};
+  `;
+
+  const items = await db.$queryRaw<unknown[]>`
+    SELECT
       p.id,
       p.title,
       p.description,
@@ -52,6 +63,10 @@ export const getAllPostService = async (): Promise<Post[]> => {
         'id', u.id,
         'name', u.name
       ) as user,
+      (SELECT count(*)::int FROM "Like" l WHERE l."postId" = p.id) as "likesCount",
+      EXISTS (
+        SELECT 1 FROM "Like" l WHERE l."postId" = p.id AND l."userId" = ${viewerId}
+      ) as "likedByMe",
       (
         SELECT json_agg(
           json_build_object(
@@ -61,8 +76,10 @@ export const getAllPostService = async (): Promise<Post[]> => {
               'id', uc.id,
               'name', uc.name
             ),
-            'createdAt', c."createdAt"
+            'createdAt', c."createdAt",
+            'updatedAt', c."updatedAt"
           )
+          ORDER BY c."createdAt"
         )
         FROM "Comment" c
         JOIN "User" uc ON uc.id = c."userId"
@@ -70,9 +87,16 @@ export const getAllPostService = async (): Promise<Post[]> => {
       ) as comments
     FROM "Post" p
     JOIN "User" u ON u.id = p."userId"
-    WHERE p.is_accepted = true
-    ORDER BY p."createdAt" DESC;
+    ${where}
+    ORDER BY p."createdAt" DESC
+    LIMIT ${limit} OFFSET ${offset};
   `;
 
-  return posts;
+  return {
+    items,
+    total,
+    page,
+    limit,
+    hasMore: offset + items.length < total,
+  };
 };
